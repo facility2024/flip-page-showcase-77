@@ -1,0 +1,144 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 248 250 252;
+    --foreground: 15 23 42;
+
+    --card: 0 0% 100%;
+    --card-foreground: 15 23 42;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 15 23 42;
+
+    --primary: 15 23 42;
+    --primary-foreground: 248 250 252;
+
+    --secondary: 241 245 249;
+    --secondary-foreground: 51 65 85;
+
+    --muted: 248 250 252;
+    --muted-foreground: 100 116 139;
+
+    --accent: 236 72% 79%;
+    --accent-foreground: 15 23 42;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 248 250 252;
+
+    --border: 226 232 240;
+    --input: 226 232 240;
+    --ring: 15 23 42;
+
+    /* Magazine specific colors */
+    --magazine-gold: 45 93% 47%;
+    --magazine-gold-light: 48 100% 67%;
+    --magazine-silver: 220 9% 46%;
+    --magazine-dark: 15 23 42;
+    --magazine-light: 248 250 252;
+
+    /* Gradients */
+    --gradient-elegant: linear-gradient(135deg, hsl(var(--magazine-gold)), hsl(var(--magazine-gold-light)));
+    --gradient-subtle: linear-gradient(180deg, hsl(var(--background)), hsl(var(--muted)));
+    --gradient-magazine: linear-gradient(45deg, hsl(var(--magazine-dark)), hsl(var(--magazine-silver)));
+    --gradient-editor: linear-gradient(to right top, #5d0ff2, #610ee0, #630ece, #630fbd, #6111ac);
+
+    /* Shadows */
+    --shadow-elegant: 0 20px 25px -5px rgba(15, 23, 42, 0.1), 0 10px 10px -5px rgba(15, 23, 42, 0.04);
+    --shadow-magazine: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
+    --shadow-glow: 0 0 40px hsla(var(--magazine-gold), 0.3);
+
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-magazine: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 15 23 42;
+    --foreground: 248 250 252;
+
+    --card: 30 41 59;
+    --card-foreground: 248 250 252;
+
+    --popover: 30 41 59;
+    --popover-foreground: 248 250 252;
+
+    --primary: 248 250 252;
+    --primary-foreground: 15 23 42;
+
+    --secondary: 30 41 59;
+    --secondary-foreground: 226 232 240;
+
+    --muted: 30 41 59;
+    --muted-foreground: 148 163 184;
+
+    --accent: 236 72% 79%;
+    --accent-foreground: 15 23 42;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 248 250 252;
+
+    --border: 30 41 59;
+    --input: 30 41 59;
+    --ring: 236 72% 79%;
+
+    /* Dark mode magazine colors */
+    --magazine-gold: 48 100% 67%;
+    --magazine-gold-light: 54 100% 74%;
+    --magazine-silver: 226 232 240;
+    --magazine-dark: 15 23 42;
+    --magazine-light: 248 250 252;
+
+    /* Dark gradients */
+    --gradient-elegant: linear-gradient(135deg, hsl(var(--magazine-gold)), hsl(var(--magazine-gold-light)));
+    --gradient-subtle: linear-gradient(180deg, hsl(var(--background)), hsl(var(--muted)));
+    --gradient-magazine: linear-gradient(45deg, hsl(var(--magazine-dark)), hsl(var(--magazine-silver)));
+
+    /* Dark shadows */
+    --shadow-elegant: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+    --shadow-magazine: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    --shadow-glow: 0 0 40px hsla(var(--magazine-gold), 0.4);
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
