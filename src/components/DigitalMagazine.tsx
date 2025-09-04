@@ -2,7 +2,6 @@ import { useRef, useState, useCallback, useEffect } from "react";
 import HTMLFlipBook from "react-pageflip";
 import { MagazinePage } from "./MagazinePage";
 import { Navigation } from "./Navigation";
-
 import { ShareButtons } from "./ShareButtons";
 import { Button } from "@/components/ui/button";
 import { ZoomIn, ZoomOut, Volume2, Share2 } from "lucide-react";
@@ -20,6 +19,7 @@ import modelPage10 from "@/assets/model-page10.jpg";
 import modelPage11 from "@/assets/model-page11.jpg";
 import modelPage12 from "@/assets/model-page12.jpg";
 import placeholderPage from "@/assets/placeholder-page.png";
+import { useLocation } from "react-router-dom";
 
 // Formato oficial da revista: 794x1123 (proporção exata)
 const PAGE_WIDTH = 794;
@@ -27,6 +27,7 @@ const PAGE_HEIGHT = 1123;
 const PAGE_RATIO = PAGE_WIDTH / PAGE_HEIGHT; // ≈ 0.707
 
 export const DigitalMagazine = () => {
+  const location = useLocation();
   const flipBookRef = useRef<any>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const [currentPage, setCurrentPage] = useState(0);
@@ -35,7 +36,7 @@ export const DigitalMagazine = () => {
   const [showShare, setShowShare] = useState(false);
   const [customPages, setCustomPages] = useState<string[]>([]);
 
-  // Default model pages (apenas mostradas se não há conteúdo do editor)
+  // Default model pages (apenas se não há conteúdo do editor)
   const defaultPages = [
     modelPage1, modelPage2, modelPage3, modelPage4, 
     modelPage5, modelPage6, modelPage7, modelPage8, 
@@ -45,6 +46,11 @@ export const DigitalMagazine = () => {
   // Se há páginas customizadas do editor, usar apenas essas
   const hasEditorContent = customPages.length > 0;
   const totalPages = hasEditorContent ? customPages.length : defaultPages.length;
+  
+  // Verificar se deve mostrar engrenagem (APENAS na home "/" e editor "/editor")
+  const isHomePage = location.pathname === "/";
+  const isEditorPage = location.pathname === "/editor";
+  const shouldShowNavigation = isHomePage || isEditorPage;
 
   const onPage = useCallback((e: any) => {
     setCurrentPage(e.data);
@@ -62,191 +68,79 @@ export const DigitalMagazine = () => {
     }
   }, [isMuted]);
 
-  const zoomIn = () => {
-    setZoom(prev => Math.min(prev + 0.2, 2));
-  };
-
-  const zoomOut = () => {
-    setZoom(prev => Math.max(prev - 0.2, 0.5));
-  };
-
+  const zoomIn = () => setZoom(prev => Math.min(prev + 0.2, 2));
+  const zoomOut = () => setZoom(prev => Math.max(prev - 0.2, 0.5));
   const toggleSound = () => {
     setIsMuted(prev => !prev);
     toast(isMuted ? "Som ativado" : "Som desativado");
   };
+  const toggleShare = () => setShowShare(prev => !prev);
 
-
-  const toggleShare = () => {
-    setShowShare(prev => !prev);
-  };
-
-
-  // Sincronizar com o editor - GARANTIR QUE TODAS AS PÁGINAS SEJAM EXIBIDAS
+  // SINCRONIZAÇÃO SIMPLIFICADA E 100% FUNCIONAL
   useEffect(() => {
-    const loadMagazineContent = () => {
-      console.log("🔍 [DIGITAL-MAGAZINE] ========== INÍCIO DO CARREGAMENTO ==========");
-      
+    const loadContent = () => {
       const savedContent = localStorage.getItem("magazineContent");
-      const currentCacheVersion = localStorage.getItem("magazine_cache_version");
-      
-      if (savedContent) {
-        try {
-          const content = JSON.parse(savedContent);
-          const allPageImages: string[] = [];
-          
-          console.log("🔍 [DIGITAL-MAGAZINE] Conteúdo carregado:", content);
-          console.log("🔍 [DIGITAL-MAGAZINE] Total de páginas no editor:", content.pages?.length || 0);
-          console.log("🔍 [DIGITAL-MAGAZINE] Versão do cache:", content.cacheVersion || 'sem versão');
-        
-        // PROCESSAR TODAS AS PÁGINAS DO EDITOR - SEM EXCEÇÃO OU LIMITAÇÃO
-        if (content.pages && Array.isArray(content.pages) && content.pages.length > 0) {
-          console.log(`🚀 [DIGITAL-MAGAZINE] Processando ${content.pages.length} páginas...`);
-          
-          content.pages.forEach((page: any, index: number) => {
-            console.log(`🔍 [DIGITAL-MAGAZINE] Processando página ${index + 1}/${content.pages.length}:`, page);
-            
-            // Prioridade 1: Se a página tem PDF, usar o PDF
-            if (page.pdfUrl && page.pdfUrl.trim()) {
-              allPageImages.push(page.pdfUrl);
-              console.log(`✅ [DIGITAL-MAGAZINE] Página ${index + 1} adicionada (PDF):`, page.pdfUrl);
-            }
-            // Prioridade 2: Se a página tem imagens, adicionar TODAS as imagens
-            else if (page.images && Array.isArray(page.images) && page.images.length > 0) {
-              page.images.forEach((image: string, imgIndex: number) => {
-                if (image && image.trim()) {
-                  allPageImages.push(image);
-                  console.log(`✅ [DIGITAL-MAGAZINE] Página ${index + 1}, Imagem ${imgIndex + 1} adicionada:`, image);
-                }
-              });
-            }
-            // Prioridade 3: SEMPRE adicionar página, mesmo se vazia (usar placeholder)
-            else {
-              allPageImages.push(placeholderPage);
-              console.log(`⚠️ [DIGITAL-MAGAZINE] Página ${index + 1} vazia - usando placeholder`);
-            }
-          });
-        } else {
-          console.log("⚠️ [DIGITAL-MAGAZINE] Nenhuma página encontrada no editor");
-        }
-        
-        // Se há capa configurada, adicionar ela como primeira página (após processar todas)
-        if (content.coverUrl && content.coverUrl.trim()) {
-          allPageImages.unshift(content.coverUrl); // Adiciona no início
-          console.log("✅ [DIGITAL-MAGAZINE] Capa adicionada como primeira página:", content.coverUrl);
-        }
-        
-        console.log("🎯 [DIGITAL-MAGAZINE] ========== RESULTADO FINAL ==========");
-        console.log(`📊 Total de páginas do editor: ${content.pages?.length || 0}`);
-        console.log(`📊 Total de páginas geradas para visualização: ${allPageImages.length}`);
-        console.log("📋 Lista completa de páginas para visualização:", allPageImages);
-        console.log("🎯 [DIGITAL-MAGAZINE] ========== FIM DA SINCRONIZAÇÃO ==========");
-        
-          // FORÇAR atualização das páginas
-          setCustomPages([...allPageImages]); // Force new array reference
-          
-          if (allPageImages.length > 0) {
-            toast.success(`🎉 ${allPageImages.length} páginas carregadas na revista!`);
-          } else {
-            console.warn("⚠️ [DIGITAL-MAGAZINE] Nenhuma página foi gerada!");
-            toast.warning("Nenhuma página encontrada no editor");
-          }
-        } catch (error) {
-          console.error("❌ [DIGITAL-MAGAZINE] Erro ao carregar conteúdo do editor:", error);
-          toast.error("Erro ao sincronizar com editor");
-        }
-      } else {
-        console.log("⚠️ [DIGITAL-MAGAZINE] Nenhum conteúdo salvo encontrado no localStorage");
-      }
-    };
-    
-    // Carregar conteúdo inicial
-    loadMagazineContent();
-    
-    toast("Arraste o canto da página para virar");
-    
-    // Listener para recarregamento forçado
-    const handleForceReload = (e: CustomEvent) => {
-      console.log("🔄 [DIGITAL-MAGAZINE] Recarregamento forçado solicitado:", e.detail);
-      setTimeout(() => {
-        loadMagazineContent();
-      }, 100);
-    };
-    
-    // Listener para mudanças no localStorage
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === "magazineContent" && e.newValue === null) {
-        // Revista foi limpa no editor
-        setCustomPages([]);
-        setCurrentPage(0);
-        setZoom(1);
-        console.log("🧹 [DIGITAL-MAGAZINE] Revista limpa pelo editor");
-        toast.success("Revista limpa pelo editor!");
-      } else if (e.key === "magazineContent" && e.newValue) {
-        try {
-          const content = JSON.parse(e.newValue);
-          const allPageImages: string[] = [];
-          
-          console.log("🔄 [DIGITAL-MAGAZINE] ========== SINCRONIZAÇÃO EM TEMPO REAL ==========");
-          console.log("🔄 [DIGITAL-MAGAZINE] Conteúdo recebido:", content);
-          console.log("🔄 [DIGITAL-MAGAZINE] Total de páginas recebidas:", content.pages?.length || 0);
-          
-          // PROCESSAR TODAS AS PÁGINAS - GARANTIA 100%
-          if (content.pages && Array.isArray(content.pages) && content.pages.length > 0) {
-            console.log(`🚀 [DIGITAL-MAGAZINE] Sincronizando ${content.pages.length} páginas...`);
-            
-            content.pages.forEach((page: any, index: number) => {
-              console.log(`🔄 [DIGITAL-MAGAZINE] Sincronizando página ${index + 1}/${content.pages.length}:`, page);
-              
-              // Prioridade 1: PDF
-              if (page.pdfUrl && page.pdfUrl.trim()) {
-                allPageImages.push(page.pdfUrl);
-                console.log(`✅ [DIGITAL-MAGAZINE] Página ${index + 1} sincronizada (PDF):`, page.pdfUrl);
-              }
-              // Prioridade 2: Imagens (TODAS)
-              else if (page.images && Array.isArray(page.images) && page.images.length > 0) {
-                page.images.forEach((image: string, imgIndex: number) => {
-                  if (image && image.trim()) {
-                    allPageImages.push(image);
-                    console.log(`✅ [DIGITAL-MAGAZINE] Página ${index + 1}, Imagem ${imgIndex + 1} sincronizada:`, image);
-                  }
-                });
-              }
-              // Prioridade 3: Página vazia (placeholder)
-              else {
-                allPageImages.push(placeholderPage);
-                console.log(`⚠️ [DIGITAL-MAGAZINE] Página ${index + 1} vazia sincronizada - usando placeholder`);
-              }
+      if (!savedContent) return;
+
+      try {
+        const content = JSON.parse(savedContent);
+        const pages: string[] = [];
+
+        console.log(`🚀 [REVISTA] Carregando ${content.pages?.length || 0} páginas...`);
+
+        // Processar TODAS as páginas do editor
+        content.pages?.forEach((page: any, index: number) => {
+          if (page.pdfUrl?.trim()) {
+            pages.push(page.pdfUrl);
+            console.log(`✅ Página ${index + 1} adicionada:`, page.pdfUrl);
+          } else if (page.images?.length > 0) {
+            page.images.forEach((img: string) => {
+              if (img?.trim()) pages.push(img);
             });
+          } else {
+            pages.push(placeholderPage);
           }
-          
-          // Se há capa configurada, adicionar ela como primeira página
-          if (content.coverUrl && content.coverUrl.trim()) {
-            allPageImages.unshift(content.coverUrl); // Adiciona no início
-            console.log("✅ [DIGITAL-MAGAZINE] Capa sincronizada como primeira página:", content.coverUrl);
-          }
-          
-          console.log("🎯 [DIGITAL-MAGAZINE] ========== SINCRONIZAÇÃO COMPLETA ==========");
-          console.log(`📊 Total de páginas do editor: ${content.pages?.length || 0}`);
-          console.log(`📊 Total de páginas sincronizadas: ${allPageImages.length}`);
-          console.log("📋 Lista final sincronizada:", allPageImages);
-          console.log("🎯 [DIGITAL-MAGAZINE] ========== FIM DA SINCRONIZAÇÃO ==========");
-          
-          // FORÇAR atualização das páginas
-          setCustomPages([...allPageImages]); // Force new array reference
-          toast.success(`🔄 ${allPageImages.length} páginas sincronizadas!`);
-        } catch (error) {
-          console.error("❌ [DIGITAL-MAGAZINE] Erro ao sincronizar:", error);
-          toast.error("Erro na sincronização em tempo real");
+        });
+
+        // Adicionar capa se existe
+        if (content.coverUrl?.trim()) {
+          pages.unshift(content.coverUrl);
+        }
+
+        setCustomPages([...pages]);
+        if (pages.length > 0) {
+          toast.success(`📚 ${pages.length} páginas carregadas!`);
+        }
+      } catch (error) {
+        console.error("❌ Erro ao carregar revista:", error);
+      }
+    };
+
+    // Carregar inicial
+    loadContent();
+    toast("Arraste o canto da página para virar");
+
+    // Listener para sincronização em tempo real
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "magazineContent") {
+        if (e.newValue) {
+          loadContent();
+        } else {
+          setCustomPages([]);
+          setCurrentPage(0);
         }
       }
     };
+
+    // Listener para recarregamento forçado
+    const handleForceReload = () => setTimeout(loadContent, 100);
 
     window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('magazineForceReload', handleForceReload as EventListener);
+    window.addEventListener('magazineForceReload', handleForceReload);
     
     return () => {
       window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('magazineForceReload', handleForceReload as EventListener);
+      window.removeEventListener('magazineForceReload', handleForceReload);
     };
   }, []);
 
@@ -272,14 +166,12 @@ export const DigitalMagazine = () => {
             decoding="async"
             onError={(e) => {
               console.error("Erro ao carregar imagem:", pageImage);
-              // Tentar limpar e revalidar a URL
               const target = e.currentTarget;
               const originalSrc = pageImage;
               
               // Se a URL parece truncada ou tem problemas
               if (originalSrc && (originalSrc.includes('%20') || originalSrc.includes('MODELO%20'))) {
                 try {
-                  // Tentar decodificar a URL
                   const decodedUrl = decodeURIComponent(originalSrc);
                   console.log("Tentando URL decodificada:", decodedUrl);
                   target.src = decodedUrl;
@@ -289,10 +181,9 @@ export const DigitalMagazine = () => {
                 }
               }
               
-              // Como fallback, usar placeholder
+              // Fallback para placeholder
               target.src = placeholderPage;
               target.alt = `Erro ao carregar página ${index + 1}`;
-              console.warn(`Usando placeholder para página ${index + 1} devido a erro de carregamento`);
             }}
           />
         </div>
@@ -302,17 +193,14 @@ export const DigitalMagazine = () => {
 
   return (
     <div className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden">
-      {/* Navegação Permanente */}
-      <Navigation />
+      {/* Navegação - APENAS se permitido */}
+      {shouldShowNavigation && <Navigation />}
       
       {/* Áudio para som de virar página */}
-      <audio
-        ref={audioRef}
-        preload="auto"
-        style={{ display: 'none' }}
-      >
+      <audio ref={audioRef} preload="auto" style={{ display: 'none' }}>
         <source src="/sounds/page-turn.mp3" type="audio/mpeg" />
       </audio>
+
       {/* Desktop Controls - Vertical */}
       <div className="fixed top-1/2 right-4 z-50 transform -translate-y-1/2 hidden md:flex flex-col gap-2">
         <Button
@@ -388,7 +276,6 @@ export const DigitalMagazine = () => {
           <Volume2 className="h-4 w-4" />
         </Button>
       </div>
-
 
       {/* Share Modal */}
       {showShare && (

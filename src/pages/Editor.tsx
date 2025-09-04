@@ -1,10 +1,11 @@
 import { MagazineEditor } from "@/components/MagazineEditor";
-import { Navigation } from "@/components/Navigation";
 
+// * PÁGINA DO EDITOR - PARA CRIAR E EDITAR REVISTAS *
+// * SOMENTE ACESSÍVEL VIA /editor, /edit, /admin, /settings *
+// * AQUI O ADMIN CRIA E GERENCIA O CONTEÚDO *
 const Editor = () => {
   return (
-    <div className="relative">
-      <Navigation />
+    <div className="min-h-screen">
       <MagazineEditor />
     </div>
   );

@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { useParams, Navigate } from "react-router-dom";
 import { DigitalMagazine } from "@/components/DigitalMagazine";
-import { Navigation } from "@/components/Navigation";
 import { toast } from "sonner";
 
+// * PÁGINA PARA VISUALIZAR REVISTA COMPARTILHADA *
+// * SEM ENGRENAGEM - APENAS VISUALIZAÇÃO *
 const Magazine = () => {
   const { encodedContent } = useParams();
   const [isLoading, setIsLoading] = useState(true);
@@ -55,7 +56,6 @@ const Magazine = () => {
 
   return (
     <div className="min-h-screen relative">
-      <Navigation />
       <DigitalMagazine />
     </div>
   );
