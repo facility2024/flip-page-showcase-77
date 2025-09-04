@@ -205,9 +205,17 @@ export const MagazineEditor = () => {
     
     console.log("✅ [EDITOR] Configurando capa:", firstUrl.trim());
 
+    // FORÇAR LIMPEZA DE CACHE ANTES DE PROCESSAR
+    console.log("🧹 [EDITOR] Limpando cache anterior...");
+    localStorage.removeItem("magazineContent");
+    localStorage.removeItem("magazine_cache_version");
+    
     // Limpar e validar URLs
     const cleanedUrls = urls.map(url => {
       let cleanUrl = url.trim();
+      
+      // Remover caracteres invisíveis e espaços extras
+      cleanUrl = cleanUrl.replace(/[\u200B-\u200D\uFEFF]/g, '');
       
       // Tentar decodificar URLs que possam estar mal codificadas
       try {
@@ -217,6 +225,11 @@ export const MagazineEditor = () => {
         }
       } catch (error) {
         console.warn(`⚠️ [EDITOR] Erro ao decodificar URL: ${cleanUrl}`, error);
+      }
+      
+      // Validar se a URL não está truncada
+      if (cleanUrl && cleanUrl.length < 10) {
+        console.warn(`⚠️ [EDITOR] URL muito curta detectada: ${cleanUrl}`);
       }
       
       return cleanUrl;
@@ -289,18 +302,32 @@ export const MagazineEditor = () => {
         return;
       }
       
-      localStorage.setItem("magazineContent", JSON.stringify(finalContent));
+      // GERAR NOVA VERSÃO DE CACHE PARA FORÇAR RECARREGAMENTO
+      const cacheVersion = Date.now();
+      const contentWithVersion = {
+        ...finalContent,
+        cacheVersion: cacheVersion
+      };
+      
+      localStorage.setItem("magazineContent", JSON.stringify(contentWithVersion));
+      localStorage.setItem("magazine_cache_version", cacheVersion.toString());
       
       // Disparar evento para sincronizar em tempo real
       window.dispatchEvent(new StorageEvent('storage', {
         key: 'magazineContent',
-        newValue: JSON.stringify(finalContent),
+        newValue: JSON.stringify(contentWithVersion),
         storageArea: localStorage
       }));
       
+      // FORÇAR RECARREGAMENTO DA VISUALIZAÇÃO
+      window.dispatchEvent(new CustomEvent('magazineForceReload', {
+        detail: { pages: finalContent.pages.length, cacheVersion }
+      }));
+      
       console.log("✅ [EDITOR] Auto-salvamento forçado concluído!");
-      toast.success(`📚 ${finalContent.pages.length} páginas sincronizadas com a visualização!`);
-    }, 50); // Reduzido para 50ms para sincronização mais rápida
+      console.log(`✅ [EDITOR] Nova versão de cache gerada: ${cacheVersion}`);
+      toast.success(`🔄 ${finalContent.pages.length} páginas salvas! Cache atualizado!`);
+    }, 50);
   };
 
   // Adicionar conteúdo às páginas selecionadas

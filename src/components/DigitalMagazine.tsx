@@ -83,15 +83,20 @@ export const DigitalMagazine = () => {
 
   // Sincronizar com o editor - GARANTIR QUE TODAS AS PÁGINAS SEJAM EXIBIDAS
   useEffect(() => {
-    const savedContent = localStorage.getItem("magazineContent");
-    if (savedContent) {
-      try {
-        const content = JSON.parse(savedContent);
-        const allPageImages: string[] = [];
-        
-        console.log("🔍 [DIGITAL-MAGAZINE] ========== INÍCIO DA SINCRONIZAÇÃO ==========");
-        console.log("🔍 [DIGITAL-MAGAZINE] Conteúdo carregado:", content);
-        console.log("🔍 [DIGITAL-MAGAZINE] Total de páginas no editor:", content.pages?.length || 0);
+    const loadMagazineContent = () => {
+      console.log("🔍 [DIGITAL-MAGAZINE] ========== INÍCIO DO CARREGAMENTO ==========");
+      
+      const savedContent = localStorage.getItem("magazineContent");
+      const currentCacheVersion = localStorage.getItem("magazine_cache_version");
+      
+      if (savedContent) {
+        try {
+          const content = JSON.parse(savedContent);
+          const allPageImages: string[] = [];
+          
+          console.log("🔍 [DIGITAL-MAGAZINE] Conteúdo carregado:", content);
+          console.log("🔍 [DIGITAL-MAGAZINE] Total de páginas no editor:", content.pages?.length || 0);
+          console.log("🔍 [DIGITAL-MAGAZINE] Versão do cache:", content.cacheVersion || 'sem versão');
         
         // PROCESSAR TODAS AS PÁGINAS DO EDITOR - SEM EXCEÇÃO OU LIMITAÇÃO
         if (content.pages && Array.isArray(content.pages) && content.pages.length > 0) {
@@ -136,24 +141,36 @@ export const DigitalMagazine = () => {
         console.log("📋 Lista completa de páginas para visualização:", allPageImages);
         console.log("🎯 [DIGITAL-MAGAZINE] ========== FIM DA SINCRONIZAÇÃO ==========");
         
-        // FORÇAR atualização das páginas
-        setCustomPages([...allPageImages]); // Force new array reference
-        
-        if (allPageImages.length > 0) {
-          toast.success(`🎉 ${allPageImages.length} páginas carregadas na revista!`);
-        } else {
-          console.warn("⚠️ [DIGITAL-MAGAZINE] Nenhuma página foi gerada!");
-          toast.warning("Nenhuma página encontrada no editor");
+          // FORÇAR atualização das páginas
+          setCustomPages([...allPageImages]); // Force new array reference
+          
+          if (allPageImages.length > 0) {
+            toast.success(`🎉 ${allPageImages.length} páginas carregadas na revista!`);
+          } else {
+            console.warn("⚠️ [DIGITAL-MAGAZINE] Nenhuma página foi gerada!");
+            toast.warning("Nenhuma página encontrada no editor");
+          }
+        } catch (error) {
+          console.error("❌ [DIGITAL-MAGAZINE] Erro ao carregar conteúdo do editor:", error);
+          toast.error("Erro ao sincronizar com editor");
         }
-      } catch (error) {
-        console.error("❌ [DIGITAL-MAGAZINE] Erro ao carregar conteúdo do editor:", error);
-        toast.error("Erro ao sincronizar com editor");
+      } else {
+        console.log("⚠️ [DIGITAL-MAGAZINE] Nenhum conteúdo salvo encontrado no localStorage");
       }
-    } else {
-      console.log("⚠️ [DIGITAL-MAGAZINE] Nenhum conteúdo salvo encontrado no localStorage");
-    }
+    };
+    
+    // Carregar conteúdo inicial
+    loadMagazineContent();
     
     toast("Arraste o canto da página para virar");
+    
+    // Listener para recarregamento forçado
+    const handleForceReload = (e: CustomEvent) => {
+      console.log("🔄 [DIGITAL-MAGAZINE] Recarregamento forçado solicitado:", e.detail);
+      setTimeout(() => {
+        loadMagazineContent();
+      }, 100);
+    };
     
     // Listener para mudanças no localStorage
     const handleStorageChange = (e: StorageEvent) => {
@@ -225,9 +242,11 @@ export const DigitalMagazine = () => {
     };
 
     window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('magazineForceReload', handleForceReload as EventListener);
     
     return () => {
       window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('magazineForceReload', handleForceReload as EventListener);
     };
   }, []);
 
