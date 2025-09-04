@@ -253,7 +253,27 @@ export const DigitalMagazine = () => {
             decoding="async"
             onError={(e) => {
               console.error("Erro ao carregar imagem:", pageImage);
-              e.currentTarget.style.display = "none";
+              // Tentar limpar e revalidar a URL
+              const target = e.currentTarget;
+              const originalSrc = pageImage;
+              
+              // Se a URL parece truncada ou tem problemas
+              if (originalSrc && (originalSrc.includes('%20') || originalSrc.includes('MODELO%20'))) {
+                try {
+                  // Tentar decodificar a URL
+                  const decodedUrl = decodeURIComponent(originalSrc);
+                  console.log("Tentando URL decodificada:", decodedUrl);
+                  target.src = decodedUrl;
+                  return;
+                } catch (decodeError) {
+                  console.warn("Erro ao decodificar URL:", decodeError);
+                }
+              }
+              
+              // Como fallback, usar placeholder
+              target.src = placeholderPage;
+              target.alt = `Erro ao carregar página ${index + 1}`;
+              console.warn(`Usando placeholder para página ${index + 1} devido a erro de carregamento`);
             }}
           />
         </div>

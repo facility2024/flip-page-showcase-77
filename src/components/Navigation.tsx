@@ -24,7 +24,7 @@ export const Navigation = () => {
         </Button>
       )}
       
-      {!isEditor && (
+      {!isEditor && !isMagazineView && (
         <Button
           onClick={() => navigate("/editor")}
           variant="secondary"

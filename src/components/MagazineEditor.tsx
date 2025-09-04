@@ -205,12 +205,28 @@ export const MagazineEditor = () => {
     
     console.log("✅ [EDITOR] Configurando capa:", firstUrl.trim());
 
-    // Criar páginas para TODAS as URLs (incluindo a primeira como página)
-    const newPages = urls.map((url, index) => {
-      const trimmedUrl = url.trim();
-      console.log(`✅ [EDITOR] Criando página ${index + 1}/${urls.length}: ${trimmedUrl}`);
+    // Limpar e validar URLs
+    const cleanedUrls = urls.map(url => {
+      let cleanUrl = url.trim();
       
-      if (!trimmedUrl) {
+      // Tentar decodificar URLs que possam estar mal codificadas
+      try {
+        if (cleanUrl.includes('%20') || cleanUrl.includes('%') || cleanUrl.includes('MODELO%20')) {
+          cleanUrl = decodeURIComponent(cleanUrl);
+          console.log(`🔧 [EDITOR] URL decodificada: ${cleanUrl}`);
+        }
+      } catch (error) {
+        console.warn(`⚠️ [EDITOR] Erro ao decodificar URL: ${cleanUrl}`, error);
+      }
+      
+      return cleanUrl;
+    });
+
+    // Criar páginas para TODAS as URLs (incluindo a primeira como página)
+    const newPages = cleanedUrls.map((url, index) => {
+      console.log(`✅ [EDITOR] Criando página ${index + 1}/${cleanedUrls.length}: ${url}`);
+      
+      if (!url) {
         console.warn(`⚠️ [EDITOR] URL vazia encontrada no índice ${index}`);
         return {
           pdfUrl: "",
@@ -223,7 +239,7 @@ export const MagazineEditor = () => {
       }
       
       return {
-        pdfUrl: trimmedUrl,
+        pdfUrl: url,
         images: [],
         audioUrl: "",
         videoUrl: "",
@@ -235,13 +251,20 @@ export const MagazineEditor = () => {
     console.log("🎯 [EDITOR] Páginas criadas:", newPages);
     console.log(`📊 [EDITOR] Total final de páginas: ${newPages.length}`);
 
-    // GARANTIR que todas as páginas sejam definidas
+    // GARANTIR que todas as páginas sejam definidas COM VALIDAÇÃO
     const finalContent = {
       pages: [...newPages], // Force new array
       backgroundImage: content.backgroundImage,
-      coverUrl: firstUrl.trim(),
+      coverUrl: cleanedUrls[0] || firstUrl.trim(),
       accessLogs: content.accessLogs || []
     };
+
+    // Validar que o conteúdo está correto antes de salvar
+    if (finalContent.pages.length === 0) {
+      console.error("❌ [EDITOR] ERRO CRÍTICO: Nenhuma página foi criada!");
+      toast.error("Erro: Nenhuma página foi criada. Verifique as URLs.");
+      return;
+    }
 
     // Atualizar state do editor
     setContent(finalContent);
@@ -252,12 +275,19 @@ export const MagazineEditor = () => {
     console.log("🎯 [EDITOR] ========== FIM DO PROCESSAMENTO ==========");
 
     setPdfQueue("");
-    toast.success(`🎉 ${urls.length} páginas criadas! Capa: ${firstUrl.substring(0, 50)}...`);
+    toast.success(`🎉 ${cleanedUrls.length} páginas criadas! Capa configurada!`);
     
     // Auto-salvar IMEDIATAMENTE para garantir sincronização
     setTimeout(() => {
       console.log("💾 [EDITOR] Iniciando auto-salvamento forçado...");
       console.log(`💾 [EDITOR] Salvando ${finalContent.pages.length} páginas...`);
+      
+      // Validar novamente antes de salvar
+      if (finalContent.pages.length === 0) {
+        console.error("❌ [EDITOR] ERRO: Tentando salvar conteúdo sem páginas!");
+        toast.error("Erro ao salvar: conteúdo vazio detectado.");
+        return;
+      }
       
       localStorage.setItem("magazineContent", JSON.stringify(finalContent));
       
